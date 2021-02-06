@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MySQL</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/img/mysql.png" />
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+     <script>
+        jQuery(document).ready(function(){
+      　    $.get("operate/checklog.php", function(data,status){
+                if(data != "TRUE"){
+                    location.href="login.html"
+                }
+                else{
+                    document.getElementById('input').style.display = 'block'
+                }
+            });
+        });
+        
+        　    
+            
+        
+    </script>
+    <link href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.staticfile.org/vue/2.2.2/vue.min.js"></script>
+    <script src="https://cdn.staticfile.org/axios/0.18.0/axios.min.js"></script>
+    <style>
+        html,body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body{
+            text-align: center;
+            background-color: #191733;
+        }
+        .contain{
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.6);
+            height: 100%;
+            margin:0 auto;
+        }
+        .logbtn{
+            width: 70px;
+            font-size: 15px;
+            border-radius: 3px;
+            padding: 4px;
+            background-color: #EC7063;
+            color: #fff;
+            outline-width: 0px;
+        }
+        .logbtn:hover{
+            background-color: #F5B7B1;
+        }
+        .toplab{
+            height: 120px;
+            width: 100%;
+        }
+        .tabcol{
+            height: 500px;
+            width: 100%;
+            background-color: rgba(255, 255, 255);
+            box-shadow: 4px 4px 4px rgba(10,10,10,0.5) inset;
+            border-radius: 5px;
+            text-align: left;
+            overflow: auto;
+        }
+        .qq{
+            
+            height: 100px;
+            top:10px;
+            position: relative;
+            background-color: #222;
+            padding: 7px;
+            overflow: hidden;
+            color: #fff;
+        }
+        .ull{
+            text-align: left;
+            padding: 10px;
+            font-weight: bolder;
+        }
+        li{
+            text-indent:20px;
+            list-style: none;
+        }
+        textarea{
+            background-color: rgba(255, 255, 255, 0);
+            border: none;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="contain" id="input" style="display:none">
+        <div class="toplab">
+            <div class="col-md-7">
+                <div class="tabcol qq">
+                    <textarea type="text" v-model="intext" @keyup.alt.enter="excute(intext,picked)" placeholder="command here"></textarea>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="tabcol qq" id="demo" style="overflow:auto">
+                    <span v-html="back"></span>
+                </div>
+            </div>
+            
+            <div class="col-md-1"><br>
+                <button class="logbtn" @click="exit">EXIT</button><br><br>
+                <button class="logbtn"  @click="back = ''">CLEAR</button>
+            </div>
+        </div>
+
+
+        <div class="col-md-2">
+            <div class="tabcol ull">
+                <div v-for="i in listdb.length">
+                    
+                    <input type="radio" :value="listdb[i-1]" v-model="picked">
+                    <span>{{listdb[i-1]}}</span>
+                    
+                    
+                    <template v-if="picked == listdb[i-1]">
+                        <li @dblclick="excute('select * from '+tb,listdb[i-1])" v-for="tb in listtable[i-1]">{{tb}}</li>
+                    </template>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="col-md-9">
+            <div class="tabcol" style="padding: 8px;">
+                <table class="table-bordered" style="width: 100%" id="tab">
+                    <tr>
+                        <th v-for="(value,key) in tabledata[0]">{{key}}</th>
+                    </tr>
+                    <tr v-for="n in tabledata">
+                        <td v-for="(value,key) in n">{{value}}</td>
+                    </tr>
+                    
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        
+        var vmInput = new Vue({
+            el:"#input",
+            data:{
+                intext:"",
+                active:-1,
+                listdb:[],
+                picked:'None',
+                listtable:[],
+                back:"Detail Show Here<br>",
+                tabledata:[],
+            },
+            methods:{
+                excute:function(query,db){
+                    _this = this
+                    axios.get('operate/query.php?db='+ db +'&query=' + query)
+                    .then(function(res){
+                        if(res.data.length > 0) {
+        	             	if(query.indexOf("select") != -1){
+        	             	    _this.tabledata = res.data
+        	             	    _this.back = "Query "+ res.data.length +" result<br>" + _this.back
+        	             	}
+        	             	else{
+        	             	    _this.back =  res.data + "<br>" + _this.back
+        	             	    _this.getlist()
+        	             	}
+                        }
+                        else{
+                            if(query.indexOf("select") != -1){
+        	             	    _this.tabledata = []
+        	             	    _this.back = "No Find<br>" + _this.back
+        	             	}
+        	             	else{
+        	             	    _this.back = "operate success<br>" + _this.back
+        	             	    _this.getlist()
+        	             	}
+                        }
+    	            })
+                    .catch(function(error){
+                        console.log(error)
+                        _this.back = error + '<br>operate fail<br>' + _this.back
+                    })
+                },
+                exit:function(){
+                    axios.get('operate/Logout.php')
+                    .then(function(res){
+                        if(res.data == 'TRUE'){
+                            location.href = "login.html"
+                        }
+                        else{
+                            alert(res.data)   
+                        }
+                    }).catch(function(error){
+                        alert(error)
+                    })
+                },
+                getlist:function(){
+                    _this = this
+                    axios.get('operate/DBT.php')
+                    .then(function(res){ 
+    	             	result = res.data; 
+    	             	n = parseInt(result.length/2)
+    	             	//console.log(n)
+    	             	_this.listexpand = []
+    	             	_this.listdb = result.slice(0, n)
+    	             	_this.listtable = result.slice(n, result.length)
+    	             	for(i = 0; i<n; i++) _this.listexpand.push(false)
+    	             	
+    	            })
+                    .catch(function(error){
+                        console.log(error)
+                        _this.back = error + '<br>' + _this.back
+                    })
+                },
+            },
+            
+            mounted(){ 
+                this.getlist()
+            } 
+        })
+        //console.log(vmInput)
+    </script>
+</body>
+</html>
